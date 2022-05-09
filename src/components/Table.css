@@ -1,0 +1,16 @@
+.table {
+  width: 100%;
+}
+
+.TableHeader {
+  background-color: #e0c3fc;
+  color: white;
+  position: sticky;
+  top: 0;
+}
+
+.TableCell,
+.TableHeaderCell {
+  padding: 8px;
+  text-align: center;
+}

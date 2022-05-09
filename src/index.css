@@ -1,0 +1,25 @@
+body {
+  margin: 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.ButtonInputFile {
+  margin-top: 32px;
+  background-color: #8ec5fc;
+  color: white;
+  width: 200px;
+  height: 40px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+}
+
+.ButtonInputFile label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  line-height: 40px;
+  text-align: center;
+  cursor: pointer;
+}
