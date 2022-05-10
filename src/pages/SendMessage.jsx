@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 
 import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 
 import { db, storage } from "../services/firebase";
+import fetchDNI from "../services/dni";
 import Template from "../models/Template";
 import { v4 as uuidv4 } from "uuid";
 
@@ -31,6 +32,7 @@ const initialState = {
 const SendMessagePage = () => {
   const [options, setOptions] = useState([]);
   const [message, setMessage] = useState(initialState);
+  const [file, setFile] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "templates"), (snapshot) => {
@@ -49,6 +51,10 @@ const SendMessagePage = () => {
       ...prevState,
       [name]: value,
     }));
+  };
+
+  const searchDni = async () => {
+    const result = await fetchDNI(message.dni);
   };
 
   const handleSend = async () => {
@@ -74,14 +80,30 @@ const SendMessagePage = () => {
 
   const handleUpload = (e) => {
     const file = e.target.files[0];
+    setFile(file);
     const today = new Date();
     const date = `${today.getDate()}-${
       today.getMonth() + 1
     }-${today.getFullYear()}`;
-    console.log(date instanceof Blob);
 
-    // const refStorage = ref(storage, `${date}/${message.dni}.pdf`);
-    // uploadBytes(refStorage, file);
+    const refStorage = ref(storage, `${date}/${message.dni}.pdf`);
+    const uploadTask = uploadBytesResumable(refStorage, file);
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        console.log("Upload is " + progress + "% done");
+      },
+      (error) => {
+        console.log(error.code);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((url) => {
+          console.log(url);
+        });
+      }
+    );
   };
 
   return (
@@ -126,12 +148,7 @@ const SendMessagePage = () => {
               required
               type="number"
               trailingAction={
-                <TextInput.Action
-                  onClick={() => {
-                    alert("clear input");
-                  }}
-                  icon={SearchIcon}
-                />
+                <TextInput.Action onClick={searchDni} icon={SearchIcon} />
               }
             />
           </FormControl>
@@ -207,7 +224,13 @@ const SendMessagePage = () => {
           <img src={illustration1} alt="Medical" width="100%" />
           <div className="ButtonInputFile">
             <label htmlFor="input-file">Seleccione el archivo</label>
-            <input onClick={handleUpload} id="input-file" type="file" accept=".pdf" hidden />
+            <input
+              onClick={handleUpload}
+              id="input-file"
+              type="file"
+              accept=".pdf"
+              hidden
+            />
           </div>
           <Button
             onClick={handleSend}
