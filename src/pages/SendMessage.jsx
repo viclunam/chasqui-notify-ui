@@ -55,6 +55,7 @@ const SendMessagePage = () => {
 
   const searchDni = async () => {
     const result = await fetchDNI(message.dni);
+    console.log(result);
   };
 
   const handleSend = async () => {
