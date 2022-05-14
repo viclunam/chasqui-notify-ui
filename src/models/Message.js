@@ -7,6 +7,7 @@ class Message {
     this.phone = data.phone;
     this.content = data.content;
     this.urlDocument = data.urlDocument;
+    this.createdAt = data.createdAt;
   }
 }
 

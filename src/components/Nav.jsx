@@ -3,6 +3,7 @@ import {
   PaperAirplaneIcon,
   MailIcon,
   ListUnorderedIcon,
+  CpuIcon
 } from "@primer/octicons-react";
 
 const Nav = ({onChange}) => {
@@ -51,6 +52,19 @@ const Nav = ({onChange}) => {
         onClick={handleClick("sentMessages")}
         variant="invisible"
         icon={ListUnorderedIcon}
+        sx={{
+          height: 64,
+          width: 64,
+          "& svg": {
+            height: 20,
+            width: 20,
+          },
+        }}
+      />
+      <IconButton
+        onClick={handleClick("config")}
+        variant="invisible"
+        icon={CpuIcon}
         sx={{
           height: 64,
           width: 64,

@@ -16,6 +16,7 @@ import {
   TextInput,
   Select,
   Textarea,
+  Spinner,
 } from "@primer/react";
 import { SearchIcon } from "@primer/octicons-react";
 
@@ -33,6 +34,13 @@ const SendMessagePage = () => {
   const [options, setOptions] = useState([]);
   const [message, setMessage] = useState(initialState);
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [dataTemplate, setDataTemplate] = useState({
+    fullName: "",
+    names: "",
+    firstLastName: "",
+    secondLastName: "",
+  });
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "templates"), (snapshot) => {
@@ -45,8 +53,15 @@ const SendMessagePage = () => {
     };
   }, []);
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    if (message.dni.length === 8) {
+      searchDni(message.dni);
+    }
+  }, [message.dni]);
+
+  const handleChange = async (e) => {
     const { name, value } = e.target;
+
     setMessage((prevState) => ({
       ...prevState,
       [name]: value,
@@ -55,61 +70,97 @@ const SendMessagePage = () => {
 
   const searchDni = async () => {
     const result = await fetchDNI(message.dni);
-    console.log(result);
+    if (result) {
+      setMessage((prevState) => ({
+        ...prevState,
+        fullname: result.fullName,
+      }));
+      setDataTemplate({
+        fullName: result.fullName,
+        names: result.names,
+        firstLastName: result.firstLastName,
+        secondLastName: result.secondLastName,
+      });
+    }
   };
 
   const handleSend = async () => {
+    setLoading(true);
     const template = options.find(
       (template) => template.id === message.template
     );
-    const id = uuidv4();
-    const ref = doc(db, "messages", id);
+    const today = new Date();
+    const date = `${today.getDate()}-${
+      today.getMonth() + 1
+    }-${today.getFullYear()}`;
 
-    await setDoc(ref, {
+    const id = uuidv4();
+    const refDoc = doc(db, "messages", id);
+    const refStorage = ref(storage, `${date}/${message.dni}.pdf`);
+
+    const uploadTask = uploadBytesResumable(refStorage, file);
+    const snapshot = await uploadTask;
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    await setDoc(refDoc, {
       ...message,
+      id,
       template: {
         ...template,
       },
+      content: builderPreviewMessage(message.template),
+      urlDocument: downloadURL,
+      createdAt: today.toISOString(),
     });
     setMessage(initialState);
+    setFile(null);
+    setLoading(false);
   };
 
   const builderPreviewMessage = (templateId) => {
     const template = options.find((template) => template.id === templateId);
+    const regexFindFields = /\{\{[^}]+\}\}/g;
+    const avaiableFields = {
+      "{{NOMBRES}}": dataTemplate.names,
+      "{{PRIMER_APELLIDO}}": dataTemplate.firstLastName,
+      "{{SEGUNDO_APELLIDO}}": dataTemplate.secondLastName,
+      "{{LINK}}": "*Enlace*",
+    };
+
+    const fields = template?.message.match(regexFindFields);
+
+    if (fields) {
+      const values = fields.map((field) => avaiableFields[field]);
+      return template.message.replace(regexFindFields, () => values.shift());
+    }
+
     return template?.message ?? "";
   };
 
   const handleUpload = (e) => {
     const file = e.target.files[0];
     setFile(file);
-    const today = new Date();
-    const date = `${today.getDate()}-${
-      today.getMonth() + 1
-    }-${today.getFullYear()}`;
-
-    const refStorage = ref(storage, `${date}/${message.dni}.pdf`);
-    const uploadTask = uploadBytesResumable(refStorage, file);
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        console.log("Upload is " + progress + "% done");
-      },
-      (error) => {
-        console.log(error.code);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((url) => {
-          console.log(url);
-        });
-      }
-    );
   };
+
+  if (loading) {
+    return (
+      <Box
+        height="100%"
+        display="grid"
+        sx={{
+          placeContent: "center",
+        }}
+        flexGrow={1}
+      >
+        <Spinner size="large" />
+      </Box>
+    );
+  }
 
   return (
     <Box height="100%" flexGrow={1}>
       <Heading
+        aria-label="Enviar Resultado"
         sx={{
           display: "flex",
           height: "15%",
@@ -136,6 +187,8 @@ const SendMessagePage = () => {
           }}
         >
           <FormControl
+            aria-label="Dni"
+            required
             sx={{
               mb: 3,
               width: "350px",
@@ -143,17 +196,21 @@ const SendMessagePage = () => {
           >
             <FormControl.Label>Dni</FormControl.Label>
             <TextInput
+              type="number"
               name="dni"
               value={message.dni}
               onChange={handleChange}
-              required
-              type="number"
               trailingAction={
-                <TextInput.Action onClick={searchDni} icon={SearchIcon} />
+                <TextInput.Action
+                  aria-label="Search Dni"
+                  onClick={searchDni}
+                  icon={SearchIcon}
+                />
               }
             />
           </FormControl>
           <FormControl
+            aria-label="Nombre del Paciente"
             sx={{
               mb: 3,
             }}
@@ -167,6 +224,8 @@ const SendMessagePage = () => {
             />
           </FormControl>
           <FormControl
+            aria-label="Plantilla"
+            required
             sx={{
               mb: 3,
             }}
@@ -176,17 +235,22 @@ const SendMessagePage = () => {
               name="template"
               value={message.template}
               onChange={handleChange}
-              required
             >
               <Select.Option value={"none"}>Ninguno seleccionado</Select.Option>
               {options.map((option) => (
-                <Select.Option key={option.id} value={option.id}>
+                <Select.Option
+                  key={option.id}
+                  aria-label={option.name}
+                  value={option.id}
+                >
                   {option.name}
                 </Select.Option>
               ))}
             </Select>
           </FormControl>
           <FormControl
+            aria-label="Celular"
+            required
             sx={{
               mb: 3,
             }}
@@ -196,20 +260,20 @@ const SendMessagePage = () => {
               name="phone"
               value={message.phone}
               onChange={handleChange}
-              required
             />
           </FormControl>
           <FormControl
+            aria-label="Mensaje"
             sx={{
               mb: 3,
             }}
           >
             <FormControl.Label>Mensaje</FormControl.Label>
             <Textarea
+              readOnly
               name="content"
               value={builderPreviewMessage(message.template)}
               onChange={handleChange}
-              readOnly
               cols={15}
               resize="none"
             />
@@ -226,6 +290,7 @@ const SendMessagePage = () => {
           <div className="ButtonInputFile">
             <label htmlFor="input-file">Seleccione el archivo</label>
             <input
+              required
               onClick={handleUpload}
               id="input-file"
               type="file"
@@ -234,6 +299,7 @@ const SendMessagePage = () => {
             />
           </div>
           <Button
+            aria-label="Enviar"
             onClick={handleSend}
             size="large"
             sx={{

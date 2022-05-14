@@ -124,6 +124,8 @@ const TemplatesPage = () => {
           }}
         >
           <FormControl
+            aria-label="Nombre de la Plantilla"
+            required
             sx={{
               mb: 3,
             }}
@@ -136,6 +138,8 @@ const TemplatesPage = () => {
             />
           </FormControl>
           <FormControl
+            aria-label="Mensaje"
+            required
             sx={{
               mb: 3,
             }}

@@ -10,11 +10,11 @@ yarn build
 cd dist
 
 git init
-git checkout -b main
+# git checkout -b main
 git add -A
 git commit -m 'deploy'
 
 # if you are deploying to https://<USERNAME>.github.io/<REPO>
-# git push -f git@github.com:victorlunam/chasqui-notify-exams-ui.git main:gh-pages
+git push -f git@github.com:victorlunam/chasqui-notify-exams-ui.git main:gh-pages
 
 cd -

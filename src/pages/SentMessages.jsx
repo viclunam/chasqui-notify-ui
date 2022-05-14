@@ -30,6 +30,8 @@ const SentMessagesPage = () => {
     };
   }, []);
 
+  console.log(data);
+
   return (
     <Box display="flex" flexDirection="column" height="100%" flexGrow={1}>
       <Heading
@@ -59,15 +61,17 @@ const SentMessagesPage = () => {
               <TableHeaderCell>DNI</TableHeaderCell>
               <TableHeaderCell>Nombre Completo</TableHeaderCell>
               <TableHeaderCell>Plantilla</TableHeaderCell>
+              <TableHeaderCell>Fecha</TableHeaderCell>
               <TableHeaderCell>Acciones</TableHeaderCell>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((item) => (
-              <TableRow>
+              <TableRow key={item.id}>
                 <TableCell>{item.dni}</TableCell>
                 <TableCell>{item.fullname}</TableCell>
                 <TableCell>{item?.template?.name}</TableCell>
+                <TableCell>{item?.createdAt}</TableCell>
                 <TableCell>
                   <IconButton
                     variant="invisible"
