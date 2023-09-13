@@ -4,7 +4,7 @@ import fs from "fs";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: "/chasqui-notify-exams-ui/",
+  base: "/chasqui-notify-ui/",
   server: {
     https: {
       key: fs.readFileSync("./.cert/key.pem"),
