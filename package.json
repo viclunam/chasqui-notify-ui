@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@primer/octicons-react": "^17.1.0",
-    "@primer/react": "^35.2.1",
+    "@primer/octicons-react": "19.7.0",
+    "@primer/react": "^35.29.0",
     "firebase": "^9.8.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
